@@ -1,0 +1,58 @@
+function plotSurvival(k)
+
+[X, vname, cname]= tblread('../data/bc_mRNA_clusters_U.csv',',');
+[n, d] = size(X)
+%X = X(find(X(:, 2)~=0), :);
+%[n1, d1] = size(X)
+
+
+%colors for the plots
+cc = ['r' 'g' 'b' 'm' 'k' 'y' 'c'];
+mycc = cc(1:k)
+
+
+% plot cdf for each cluster
+mylegend = [];
+figure('Name','Cluster CDF for initU','NumberTitle','off');
+
+for index=1:k
+	% M1
+	%X3 = X(:, 3);
+	%rows = find(X3==i);
+	%Y = X(rows, :)
+	% M2
+	%X3 = X(:, 3);
+	%Y = X(X3==index, :)
+	% M3
+	Y = [X(X(:,3)==index, 2), X(X(:,3)==index, 1)];
+	[ny, dy] = size(Y)
+	if (ny >= 5)
+		% estimate empirical survivor function
+		[ff, xx] = ecdf(Y(:,1), 'censoring', ~Y(:,2), 'function','survivor');
+		%ecdf(Y(:,1), 'censoring', Y(:,2), 'function','survivor');
+		% plot the Weibull survivor functions and estimated survivor functions
+		stairs(xx, ff, mycc(index), 'LineWidth', 3);
+		hold on
+		mylegend = strvcat(mylegend, ['Cluster ' num2str(index) ' ']);
+		
+		% fit Weibull distributions to OS times 
+		%pd = fitdist(Y(:,2),'wbl','censoring', Y(:,1))
+		%whos pd;
+		%plot(0:1:max(x), 1 - cdf('wbl', 0:1:max(x), pd.a, pd.b), ['--' mycc(i)])
+		%hold on
+		%mylegend = strvcat(mylegend , ['WBL ' num2str(index) ' ']);
+	end
+end
+hold off
+
+% fit a Cox proportional hazards regression where clusters are the explanatory variable
+[~,~,~, stats] = coxphfit(X(:,3), X(:,2), 'censoring', ~X(:,1));
+p_value = stats.p
+
+%legend('Cluster 1','Cluster 2','Cluster 3','Cluster 4','Location','NorthEast')
+legend(mylegend, 'Location', 'NorthEast', 'Orientation', 'Vertical')
+xlabel('Days to death/last contact');
+ylabel('Survival probability');
+
+end
+

@@ -1,0 +1,26 @@
+
+fileID1 = fopen('../data/tcga_brca_types_sorted.csv');
+ctypes = textscan(fileID1, '%s\t%s');
+fclose(fileID1);
+
+ctypes = ctypes{1, 1};
+whos ctypes
+
+fileID2 = fopen('../data/bc_mutation2_all_sorted_ids.txt');
+ids = textscan(fileID2, '%s');
+fclose(fileID2);
+
+ids = ids{1, 1};
+whos ids
+
+%get patients with no label
+[answer, index] = ismember(ids, ctypes(:, 1));
+with_label = ids(answer);
+no_label = ids(~answer);
+
+size_with = size(with_label)
+size_no = size(no_label)
+
+%write no label patients back to file
+cell2csv('../data/bc_mutation_nolabels.txt', no_label);
+

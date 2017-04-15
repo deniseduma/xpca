@@ -1,0 +1,59 @@
+  function [X, vname, cname, colors, U, S, V] = ov_wrapper(method, dist)
+  
+  %% load mRNA data
+  [X, vname, cname]= tblread('../data/ov_mRNA_tum_sorted.txt',' ');
+  %%read cancer types
+  %fileID = fopen('../data/ov_mRNA_types_types.txt');
+  %ctypes = textscan(fileID, '%s');
+  %fclose(fileID);
+  
+  %colors = ctypes{1, 1};
+  %blue cyan yellow green black
+  %cmap = {'LuminalA' 'blue'; 'LuminalB' 'cyan'; 'HER2' 'red'; 'Basal' 'green'; 'Normal' 'black'}
+  %cmap = {'immunoreactive' [0 0 1]; 'differentiated' [0 1 1]; 'mesenchymal' [1 0 0]; 'proliferative' [0 1 0]; 'Normal' [0 0 0]};
+  %[~, index] = ismember(colors, cmap(:,1));
+  %colors = cmap(index, 2);
+  %colors = cell2mat(colors);
+  
+  whos X
+  maxX = max(max(X))
+  %whos vname
+  %whos cname
+  %whos ctypes
+  
+  k = 5;
+  [n, d] = size(X)
+
+  %SVD
+  %[initU, initS, initV] = svds(X, k);
+  %for Poisson data
+  [initU, initS, initV] = svds(log(1 + X), 4);
+  assert(rank(initU)==k, 'rank(initU) is not k!');
+  assert(rank(initV)==k, 'rank(initV) is not k!');
+  %plotScatter(initU, k, 'SVD(X)', colors);
+  U = initU; S = initS; V = initV;
+  %return;
+  
+   %MDS
+   %D = pdist(X,'euclidean');
+   %for Poisson data
+   D = pdist(log(1 + X),'euclidean');
+   [Y, eigvals] = cmdscale(D);
+   %plotScatter(Y, k, 'MDS(X)', colors);
+   %return;
+
+   %plot the histogram of X values
+   figure('Name','Histogram of X','NumberTitle','off');
+   hist(X, 20);
+   pause(1);
+
+   %call exppca
+   %first param is method, either 'fminunc' or 'newton'
+   [U, V, M] = exppca(method, dist, X, ctypes, k, initU, initS, initV);
+
+   %principal components scatter plot	
+   plotScatter(U, k, 'XPCA(X)', colors);
+
+   %write csv to file
+   %writeCSV(X, initU, Y, U, vname, cname, types);
+    
